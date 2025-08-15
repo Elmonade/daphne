@@ -6,12 +6,15 @@ use crate::state::PlayerState;
 use crate::utility::play_new_track;
 use crate::view::render;
 use color_eyre::eyre::Result;
-use crossterm::event::{self, Event};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use playback::SinkState;
 use ratatui::DefaultTerminal;
+use rppal::gpio::{Gpio, Trigger};
 use serde::Deserialize;
 use std::path::PathBuf;
 use std::result::Result::Ok;
+use std::sync::mpsc::{self, Receiver};
+use std::thread;
 use std::time::Duration;
 mod button_handler;
 mod fuzzy_search;
@@ -20,6 +23,12 @@ mod playback;
 mod state;
 mod utility;
 mod view;
+
+const PLAY_PAUSE_PIN: u8 = 20;
+const NEXT_PIN: u8 = 16;
+const PREV_PIN: u8 = 21;
+const VOL_UP_PIN: u8 = 6;
+const VOL_DOWN_PIN: u8 = 19;
 
 #[derive(Deserialize)]
 struct Config {
@@ -54,6 +63,54 @@ enum Action {
     Escape,
 }
 
+fn setup_gpio_buttons() -> Result<Receiver<KeyEvent>> {
+    let gpio = Gpio::new()?;
+    let (tx, rx) = mpsc::channel();
+
+    // Setup pins with pull-up resistors
+    let mut play_pause_pin = gpio.get(PLAY_PAUSE_PIN)?.into_input_pullup();
+    let mut next_pin = gpio.get(NEXT_PIN)?.into_input_pullup();
+    let mut prev_pin = gpio.get(PREV_PIN)?.into_input_pullup();
+    let mut vol_up_pin = gpio.get(VOL_UP_PIN)?.into_input_pullup();
+    let mut vol_down_pin = gpio.get(VOL_DOWN_PIN)?.into_input_pullup();
+
+    // Setup interrupts with hardware debouncing
+    let tx1 = tx.clone();
+    play_pause_pin.set_async_interrupt(Trigger::FallingEdge, Some(Duration::from_millis(100)), move |_| {
+        let _ = tx1.send(KeyEvent::new(KeyCode::Char(':'), KeyModifiers::NONE));
+    })?;
+
+    let tx2 = tx.clone();
+    next_pin.set_async_interrupt(Trigger::FallingEdge, Some(Duration::from_millis(100)), move |_| {
+        let _ = tx2.send(KeyEvent::new(KeyCode::Char('k'), KeyModifiers::NONE));
+    })?;
+
+    let tx3 = tx.clone();
+    prev_pin.set_async_interrupt(Trigger::FallingEdge, Some(Duration::from_millis(100)), move |_| {
+        let _ = tx3.send(KeyEvent::new(KeyCode::Char('j'), KeyModifiers::NONE));
+    })?;
+
+    let tx4 = tx.clone();
+    vol_up_pin.set_async_interrupt(Trigger::FallingEdge, Some(Duration::from_millis(100)), move |_| {
+        let _ = tx4.send(KeyEvent::new(KeyCode::Char('K'), KeyModifiers::NONE));
+    })?;
+
+    let tx5 = tx.clone();
+    vol_down_pin.set_async_interrupt(Trigger::FallingEdge, Some(Duration::from_millis(100)), move |_| {
+        let _ = tx5.send(KeyEvent::new(KeyCode::Char('J'), KeyModifiers::NONE));
+    })?;
+
+    // Keep pins alive by moving them to a background thread
+    thread::spawn(move || {
+        let _pins = (play_pause_pin, next_pin, prev_pin, vol_up_pin, vol_down_pin);
+        loop {
+            thread::sleep(Duration::from_millis(100));
+        }
+    });
+
+    Ok(rx)
+}
+
 fn main() -> Result<()> {
     env_logger::init();
 
@@ -76,41 +133,41 @@ fn main() -> Result<()> {
     state.tx = command_tx;
     state.sink_rx = sink_rx;
 
+    let gpio_rx = setup_gpio_buttons()?;
+
     color_eyre::install()?;
     let terminal = ratatui::init();
-    let result = run(terminal, &mut state);
+    let result = run(terminal, &mut state, gpio_rx);
 
     let _ = ratatui::try_restore();
     result
 }
 
-fn run(mut terminal: DefaultTerminal, state: &mut PlayerState) -> Result<()> {
+fn run(mut terminal: DefaultTerminal, state: &mut PlayerState, gpio_rx: Receiver<KeyEvent>) -> Result<()> {
     loop {
         if let Ok(sink) = state.sink_rx.recv_timeout(Duration::from_millis(33)) {
             // Render
             terminal.draw(|f| render(f, state, &sink))?;
 
-            // Input
-            if event::poll(std::time::Duration::from_millis(16))? {
-                if let Event::Key(key) = event::read()? {
-                    if state.is_searching {
-                        match handle_search(key, state) {
-                            Action::Escape => state.is_searching = false,
-                            Action::Submit => {}
-                            Action::None => {}
-                        }
-                    } else if state.is_configuring {
-                        match handle_config(key, state) {
-                            Action::Escape => state.is_configuring = false,
-                            Action::Submit => {}
-                            Action::None => {}
-                        }
-                    } else {
-                        match handle_playback(key, state) {
-                            Action::Escape => break,
-                            Action::Submit => {}
-                            Action::None => {}
-                        }
+            // Handle GPIO button input
+            if let Ok(key) = gpio_rx.try_recv() {
+                if state.is_searching {
+                    match handle_search(key, state) {
+                        Action::Escape => state.is_searching = false,
+                        Action::Submit => {}
+                        Action::None => {}
+                    }
+                } else if state.is_configuring {
+                    match handle_config(key, state) {
+                        Action::Escape => state.is_configuring = false,
+                        Action::Submit => {}
+                        Action::None => {}
+                    }
+                } else {
+                    match handle_playback(key, state) {
+                        Action::Escape => break,
+                        Action::Submit => {}
+                        Action::None => {}
                     }
                 }
             }

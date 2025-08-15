@@ -1,0 +1,13 @@
+/home/jello/Study/Rustacean/daphne/target/debug/deps/libcpal-49fc2ebfdf9d9a6d.rmeta: /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/lib.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/error.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/mod.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/alsa/mod.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/alsa/enumerate.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/null/mod.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/platform/mod.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/samples_formats.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/traits.rs
+
+/home/jello/Study/Rustacean/daphne/target/debug/deps/cpal-49fc2ebfdf9d9a6d.d: /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/lib.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/error.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/mod.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/alsa/mod.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/alsa/enumerate.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/null/mod.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/platform/mod.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/samples_formats.rs /home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/traits.rs
+
+/home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/lib.rs:
+/home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/error.rs:
+/home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/mod.rs:
+/home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/alsa/mod.rs:
+/home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/alsa/enumerate.rs:
+/home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/host/null/mod.rs:
+/home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/platform/mod.rs:
+/home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/samples_formats.rs:
+/home/jello/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/traits.rs:
