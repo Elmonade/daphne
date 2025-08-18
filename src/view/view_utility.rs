@@ -20,31 +20,35 @@ pub(crate) fn render_progress(
 
     LineGauge::default()
         .block(title)
-        .filled_style(GAUGE_COLOR)
+        .filled_style(Color::Green)
         .ratio(ratio)
         .label("")
         .line_set(symbols::line::THICK)
         .render(area, buf);
 }
 
-pub(crate) fn title_block<'a>(color: &'a Color, author: &'a str, name: &'a str) -> Block<'a> {
-    let author = Line::from(vec![
-        Span::styled(" by ", Style::default().fg(BY_COLOR)),
-        Span::from(author),
-    ])
-    .right_aligned();
-    let name = Line::from(name).centered();
+pub(crate) fn title_block<'a>(color: &'a Color, progress: &'a str) -> Block<'a> {
+    let progress = Line::from(vec![Span::styled(
+        progress,
+        Style::default().fg(Color::Green),
+    )]);
 
     Block::new()
-        .borders(Borders::NONE)
-        .padding(Padding::vertical(1))
-        .title_bottom(author)
-        .title_bottom(name)
+        .borders(Borders::BOTTOM)
+        .padding(Padding {
+            left: (0),
+            right: (1),
+            top: (2),
+            bottom: (1),
+        })
+        .title_bottom(progress)
+        .title_alignment(ratatui::layout::Alignment::Right)
         .fg(*color)
+        .bg(Color::DarkGray)
 }
 
-pub(crate) fn create_table(tracks: &[Audio]) -> Table {
-    let header = Row::new(["Song", "Artist", "Duration"])
+pub(crate) fn create_table(tracks: &[Audio]) -> Table<'_> {
+    let header = Row::new(["Song", "Artist"])
         .style(Style::new().bold())
         .bottom_margin(1);
 
@@ -59,22 +63,13 @@ pub(crate) fn create_table(tracks: &[Audio]) -> Table {
                 _ => Style::default(),
             };
 
-            Row::new([
-                item.name.clone(),
-                item.author.clone(),
-                item.length.to_string(),
-            ])
-            .style(style)
+            Row::new([item.name.clone(), item.author.clone()]).style(style)
         })
         .collect();
 
     //let footer = Row::new(["Lemon", "Lemon Tree", "000"]);
 
-    let widths = [
-        Constraint::Percentage(50),
-        Constraint::Percentage(30),
-        Constraint::Percentage(20),
-    ];
+    let widths = [Constraint::Percentage(50), Constraint::Fill(1)];
 
     Table::new(rows, widths)
         //.footer(footer.italic())
@@ -85,7 +80,7 @@ pub(crate) fn create_table(tracks: &[Audio]) -> Table {
         .header(header)
         .column_spacing(1)
         .row_highlight_style(Style::new().fg(Color::Green))
-        .highlight_symbol("  -  ")
+        .highlight_symbol(">")
 }
 
 pub(crate) fn create_list(rows: Vec<Span>, highlight: Style) -> List {

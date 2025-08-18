@@ -87,12 +87,89 @@ pub(crate) fn handle_playback(key: KeyEvent, state: &mut PlayerState) -> Action 
         event::KeyCode::Tab => state.is_configuring = !state.is_configuring,
         event::KeyCode::Esc => return Action::Escape,
         event::KeyCode::Char(char) => match char {
-            ' ' => {
+            ':' => {
                 state
                     .tx
                     .send(Command::PlayPause(PathBuf::new()))
                     .unwrap_or(());
             }
+            '/' => {
+                state.is_searching = true;
+            }
+            'D' => {
+                if let Some(index) = state.table_state.selected() {
+                    state.tracks.remove(index);
+                }
+            }
+            'j' => {
+                state.is_choosing = true;
+                state.iteration_count = 0;
+                if let Some(selected_index) = state.table_state.selected() {
+                    if selected_index < state.number_of_tracks - 1 {
+                        state.table_state.select_next();
+                    }
+                }
+            }
+            'k' => {
+                state.is_choosing = true;
+                state.iteration_count = 0;
+                state.table_state.select_previous();
+            }
+            'p' => {
+                if let Some(mut index) = state.current_track_index {
+                    state.tracks[index].is_playing = false;
+                    index = (index + state.number_of_tracks - 1) % state.number_of_tracks;
+                    play_new_track(index, state);
+                }
+            }
+            'n' => {
+                if let Some(mut index) = state.current_track_index {
+                    state.tracks[index].is_playing = false;
+                    index = (index + 1) % state.number_of_tracks;
+                    play_new_track(index, state);
+                }
+            }
+            '<' => {
+                state
+                    .tx
+                    .send(Command::Backward(state.seek_distance))
+                    .unwrap_or(());
+            }
+            '>' => {
+                if let Some(index) = state.current_track_index {
+                    let length = state.tracks[index].length;
+                    state
+                        .tx
+                        .send(Command::Forward(state.seek_distance, length as usize))
+                        .unwrap_or(());
+                }
+            }
+            'K' => {
+                state.is_adjusting = true;
+                state.iteration_count = 0;
+                if state.volume < 2.0 {
+                    state.tx.send(Command::Volume(VOLUME_STEP)).unwrap_or(());
+                }
+            }
+            'J' => {
+                state.is_adjusting = true;
+                state.iteration_count = 0;
+                if state.volume > 0.0 {
+                    state.tx.send(Command::Volume(-VOLUME_STEP)).unwrap_or(());
+                }
+            }
+            _ => {}
+        },
+        _ => {}
+    }
+    Action::None
+}
+
+pub(crate) fn handle_choosing(key: KeyEvent, state: &mut PlayerState) -> Action {
+    match key.code {
+        event::KeyCode::Tab => state.is_configuring = !state.is_configuring,
+        event::KeyCode::Esc => return Action::Escape,
+        event::KeyCode::Char(char) => match char {
             ':' => {
                 if let Some(index) = state.table_state.selected() {
                     match state.current_track_index {
@@ -122,6 +199,8 @@ pub(crate) fn handle_playback(key: KeyEvent, state: &mut PlayerState) -> Action 
                 }
             }
             'j' => {
+                state.is_choosing = true;
+                state.iteration_count = 0;
                 if let Some(selected_index) = state.table_state.selected() {
                     if selected_index < state.number_of_tracks - 1 {
                         state.table_state.select_next();
@@ -129,6 +208,8 @@ pub(crate) fn handle_playback(key: KeyEvent, state: &mut PlayerState) -> Action 
                 }
             }
             'k' => {
+                state.is_choosing = true;
+                state.iteration_count = 0;
                 state.table_state.select_previous();
             }
             'p' => {

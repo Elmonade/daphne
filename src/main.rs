@@ -1,20 +1,20 @@
 use crate::button_handler::handle_config;
 use crate::button_handler::handle_playback;
 use crate::button_handler::handle_search;
+use crate::button_handler::handle_choosing;
 use crate::state::Configure;
 use crate::state::PlayerState;
 use crate::utility::play_new_track;
 use crate::view::render;
+use crate::gpio::setup_gpio;
 use color_eyre::eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{self, Event, KeyEvent};
 use playback::SinkState;
 use ratatui::DefaultTerminal;
-use rppal::gpio::{Gpio, Trigger};
 use serde::Deserialize;
 use std::path::PathBuf;
 use std::result::Result::Ok;
-use std::sync::mpsc::{self, Receiver};
-use std::thread;
+use std::sync::mpsc::Receiver;
 use std::time::Duration;
 mod button_handler;
 mod fuzzy_search;
@@ -23,12 +23,7 @@ mod playback;
 mod state;
 mod utility;
 mod view;
-
-const PLAY_PAUSE_PIN: u8 = 20;
-const NEXT_PIN: u8 = 16;
-const PREV_PIN: u8 = 21;
-const VOL_UP_PIN: u8 = 6;
-const VOL_DOWN_PIN: u8 = 19;
+mod gpio;
 
 #[derive(Deserialize)]
 struct Config {
@@ -63,71 +58,6 @@ enum Action {
     Escape,
 }
 
-fn setup_gpio_buttons() -> Result<Receiver<KeyEvent>> {
-    let gpio = Gpio::new()?;
-    let (tx, rx) = mpsc::channel();
-
-    let mut play_pause_pin = gpio.get(PLAY_PAUSE_PIN)?.into_input_pullup();
-    let mut next_pin = gpio.get(NEXT_PIN)?.into_input_pullup();
-    let mut prev_pin = gpio.get(PREV_PIN)?.into_input_pullup();
-    let mut vol_up_pin = gpio.get(VOL_UP_PIN)?.into_input_pullup();
-    let mut vol_down_pin = gpio.get(VOL_DOWN_PIN)?.into_input_pullup();
-
-    let tx1 = tx.clone();
-    play_pause_pin.set_async_interrupt(
-        Trigger::FallingEdge,
-        Some(Duration::from_millis(100)),
-        move |_| {
-            let _ = tx1.send(KeyEvent::new(KeyCode::Char(':'), KeyModifiers::NONE));
-        },
-    )?;
-
-    let tx2 = tx.clone();
-    next_pin.set_async_interrupt(
-        Trigger::FallingEdge,
-        Some(Duration::from_millis(100)),
-        move |_| {
-            let _ = tx2.send(KeyEvent::new(KeyCode::Char('k'), KeyModifiers::NONE));
-        },
-    )?;
-
-    let tx3 = tx.clone();
-    prev_pin.set_async_interrupt(
-        Trigger::FallingEdge,
-        Some(Duration::from_millis(100)),
-        move |_| {
-            let _ = tx3.send(KeyEvent::new(KeyCode::Char('j'), KeyModifiers::NONE));
-        },
-    )?;
-
-    let tx4 = tx.clone();
-    vol_up_pin.set_async_interrupt(
-        Trigger::FallingEdge,
-        Some(Duration::from_millis(100)),
-        move |_| {
-            let _ = tx4.send(KeyEvent::new(KeyCode::Char('K'), KeyModifiers::NONE));
-        },
-    )?;
-
-    let tx5 = tx.clone();
-    vol_down_pin.set_async_interrupt(
-        Trigger::FallingEdge,
-        Some(Duration::from_millis(100)),
-        move |_| {
-            let _ = tx5.send(KeyEvent::new(KeyCode::Char('J'), KeyModifiers::NONE));
-        },
-    )?;
-
-    thread::spawn(move || {
-        let _pins = (play_pause_pin, next_pin, prev_pin, vol_up_pin, vol_down_pin);
-        loop {
-            thread::sleep(Duration::from_millis(100));
-        }
-    });
-
-    Ok(rx)
-}
-
 fn main() -> Result<()> {
     env_logger::init();
 
@@ -152,7 +82,7 @@ fn main() -> Result<()> {
 
     color_eyre::install()?;
     let terminal = ratatui::init();
-    let gpio = setup_gpio_buttons();
+    let gpio = setup_gpio();
     let result = run(terminal, &mut state, &gpio);
 
     let _ = ratatui::try_restore();
@@ -181,6 +111,12 @@ fn run(
                     } else if state.is_configuring {
                         match handle_config(key, state) {
                             Action::Escape => state.is_configuring = false,
+                            Action::Submit => {}
+                            Action::None => {}
+                        }
+                    } else if state.is_choosing {
+                        match handle_choosing(key, state) {
+                            Action::Escape => state.is_choosing = false,
                             Action::Submit => {}
                             Action::None => {}
                         }
@@ -230,10 +166,11 @@ fn run(
 
             // If we assume two threads are perfectly in sync(probably impossible),
             // in total, one iteration should take 49ms when no button is pressed.
-            // 2s / 49ms = ~41
+            // 4s / 49ms = ~82
             state.iteration_count += 1;
-            if state.iteration_count % 41 == 0 {
+            if state.iteration_count % 82 == 0 {
                 state.is_adjusting = false;
+                state.is_choosing = false;
                 state.iteration_count = 0;
             }
         }
