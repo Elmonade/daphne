@@ -1,12 +1,12 @@
+use crate::button_handler::handle_choosing;
 use crate::button_handler::handle_config;
 use crate::button_handler::handle_playback;
 use crate::button_handler::handle_search;
-use crate::button_handler::handle_choosing;
+use crate::gpio::setup_gpio;
 use crate::state::Configure;
 use crate::state::PlayerState;
 use crate::utility::play_new_track;
 use crate::view::render;
-use crate::gpio::setup_gpio;
 use color_eyre::eyre::Result;
 use crossterm::event::{self, Event, KeyEvent};
 use playback::SinkState;
@@ -18,12 +18,12 @@ use std::sync::mpsc::Receiver;
 use std::time::Duration;
 mod button_handler;
 mod fuzzy_search;
+mod gpio;
 mod order;
 mod playback;
 mod state;
 mod utility;
 mod view;
-mod gpio;
 
 #[derive(Deserialize)]
 struct Config {
@@ -111,7 +111,7 @@ fn run(
                     } else if state.is_configuring {
                         match handle_config(key, state) {
                             Action::Escape => state.is_configuring = false,
-                            Action::Submit => {}
+                            Action::Submit => state.is_configuring = false,
                             Action::None => {}
                         }
                     } else if state.is_choosing {
@@ -170,7 +170,10 @@ fn run(
             state.iteration_count += 1;
             if state.iteration_count % 82 == 0 {
                 state.is_adjusting = false;
-                state.is_choosing = false;
+                if !sink.is_empty {
+                    state.is_choosing = false;
+                }
+                state.is_configuring = false;
                 state.iteration_count = 0;
             }
         }

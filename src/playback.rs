@@ -12,7 +12,7 @@ use crate::Command;
 
 pub(crate) struct SinkState {
     pub _is_paused: bool,
-    pub _is_empty: bool,
+    pub is_empty: bool,
     pub is_playing: bool,
     pub current_track_finished: bool,
     pub position: Duration,
@@ -44,7 +44,7 @@ pub fn setup() -> (mpsc::Sender<Command>, mpsc::Receiver<SinkState>) {
 
                 sink_state = SinkState {
                     _is_paused: sink.is_paused(),
-                    _is_empty: sink.empty(),
+                    is_empty: sink.empty(),
                     is_playing,
                     current_track_finished,
                     position: sink.get_pos(),

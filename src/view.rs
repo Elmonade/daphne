@@ -2,7 +2,6 @@ use crate::Audio;
 use crate::PlayerState;
 use crate::SinkState;
 use crate::order::Order;
-use color_eyre::owo_colors::OwoColorize;
 use number_drawer::NumberDrawer;
 use ratatui::Frame;
 use ratatui::buffer::Buffer;
@@ -13,7 +12,6 @@ use ratatui::style::palette::tailwind;
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::Line;
 use ratatui::text::Span;
-use ratatui::text::Text;
 use ratatui::widgets::Borders;
 use ratatui::widgets::Clear;
 use ratatui::widgets::LineGauge;
@@ -32,9 +30,10 @@ const PAUSED_COLOR: Color = Color::Gray;
 
 pub(crate) fn render(frame: &mut Frame, state: &PlayerState, sink: &SinkState) {
     let settings = Block::default()
-        .fg(Color::Green)
-        .padding(Padding::uniform(4))
-        .title("PLAYBACK ORDER")
+        .fg(Color::Yellow)
+        .padding(Padding::uniform(2))
+        .padding(Padding::top(4))
+        .title("Order")
         .borders(Borders::TOP | Borders::BOTTOM);
 
     if state.is_choosing {
@@ -76,9 +75,10 @@ pub(crate) fn render(frame: &mut Frame, state: &PlayerState, sink: &SinkState) {
                 Style::default().fg(player_color),
             )])
             .right_aligned();
-            let author = Line::from(vec![
-                Span::styled(&music.author, Style::default().fg(Color::Green)),
-            ])
+            let author = Line::from(vec![Span::styled(
+                &music.author,
+                Style::default().fg(Color::Green),
+            )])
             .right_aligned();
 
             let info_para = Paragraph::new(name)
@@ -95,8 +95,9 @@ pub(crate) fn render(frame: &mut Frame, state: &PlayerState, sink: &SinkState) {
         }
     }
 
-    /*
-        // Config Section
+    // Config Section
+    if state.is_configuring {
+        frame.render_widget(Clear, frame.area());
         let highlight = if state.is_configuring {
             Style::new().reversed()
         } else {
@@ -111,37 +112,36 @@ pub(crate) fn render(frame: &mut Frame, state: &PlayerState, sink: &SinkState) {
         ];
 
         // TODO: This should be inside view_utility.
-        let rows: Vec<Span> = options
+        let rows: Vec<Line> = options
             .iter()
             .map(|item| {
                 let style = match *item == state.playback_order.to_string() {
-                    true => Style::default().add_modifier(Modifier::UNDERLINED),
+                    true => Style::default().fg(Color::Green),
                     _ => Style::default(),
                 };
 
-                Span::from(item).style(style)
+                Span::from(item).style(style).into_left_aligned_line()
             })
             .collect();
 
         let list = view_utility::create_list(rows, highlight);
         let mut list_state = state.list_state.clone();
-        frame.render_stateful_widget(list.block(settings), right, &mut list_state);
+        frame.render_stateful_widget(list.block(settings), frame.area(), &mut list_state);
+    }
 
-        // Search Section
-        if state.is_searching {
-            frame.render_widget(Clear, right);
-            Paragraph::new(state.keyword.as_str())
-                .block(
-                    Block::bordered()
-                        .fg(Color::Green)
-                        .border_type(BorderType::Rounded)
-                        .padding(Padding::uniform(1))
-                        .title("SEARCH"),
-                )
-                .render(right, frame.buffer_mut());
-        }
-
-    */
+    // Search Section
+    if state.is_searching {
+        frame.render_widget(Clear, frame.area());
+        Paragraph::new(state.keyword.as_str())
+            .block(
+                Block::bordered()
+                    .fg(Color::Green)
+                    .border_type(BorderType::Rounded)
+                    .padding(Padding::uniform(1))
+                    .title("SEARCH"),
+            )
+            .render(frame.area(), frame.buffer_mut());
+    }
 
     // Volume Section
     if state.is_adjusting {

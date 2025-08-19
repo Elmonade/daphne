@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::fuzzy_search::search;
 use crate::order::Order;
 use crate::utility::order_by;
-use crate::{play_new_track, Action, Command, PlayerState};
+use crate::{Action, Command, PlayerState, play_new_track};
 use crossterm::event::{self, KeyEvent};
 
 // TODO: This shoud be inside state.rs
@@ -14,6 +14,7 @@ pub(crate) fn handle_config(key: KeyEvent, state: &mut PlayerState) -> Action {
         event::KeyCode::Tab => state.is_configuring = !state.is_configuring,
         event::KeyCode::Char(char) => match char {
             'j' => {
+                state.iteration_count = 0;
                 if let Some(selected_index) = state.list_state.selected() {
                     if selected_index < 3 {
                         state.list_state.select_next();
@@ -21,7 +22,36 @@ pub(crate) fn handle_config(key: KeyEvent, state: &mut PlayerState) -> Action {
                 }
             }
             'k' => {
+                state.iteration_count = 0;
                 state.list_state.select_previous();
+            }
+            ' ' => {
+                if let Some(index) = state.list_state.selected() {
+                    match index {
+                        0 => {
+                            order_by(&Order::Shuffle, &state.playback_order, &mut state.tracks);
+                            state.playback_order = Order::Shuffle;
+                        }
+                        1 => {
+                            order_by(&Order::Album, &state.playback_order, &mut state.tracks);
+                            state.playback_order = Order::Album;
+                        }
+                        2 => {
+                            order_by(&Order::Artist, &state.playback_order, &mut state.tracks);
+                            state.playback_order = Order::Artist;
+                        }
+
+                        3 => {
+                            order_by(&Order::Track, &state.playback_order, &mut state.tracks);
+                            state.playback_order = Order::Track;
+                        }
+                        _ => {
+                            order_by(&Order::Shuffle, &state.playback_order, &mut state.tracks);
+                            state.playback_order = Order::Shuffle;
+                        }
+                    }
+                }
+                return Action::Submit;
             }
             _ => {}
         },
@@ -87,6 +117,10 @@ pub(crate) fn handle_playback(key: KeyEvent, state: &mut PlayerState) -> Action 
         event::KeyCode::Tab => state.is_configuring = !state.is_configuring,
         event::KeyCode::Esc => return Action::Escape,
         event::KeyCode::Char(char) => match char {
+            ' ' => {
+                state.is_configuring = true;
+            }
+            // TODO: If the sink is empty, send new_track command.
             ':' => {
                 state
                     .tx
@@ -170,6 +204,9 @@ pub(crate) fn handle_choosing(key: KeyEvent, state: &mut PlayerState) -> Action 
         event::KeyCode::Tab => state.is_configuring = !state.is_configuring,
         event::KeyCode::Esc => return Action::Escape,
         event::KeyCode::Char(char) => match char {
+            ' ' => {
+                state.is_configuring = true;
+            }
             ':' => {
                 if let Some(index) = state.table_state.selected() {
                     match state.current_track_index {

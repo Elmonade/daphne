@@ -83,10 +83,10 @@ pub(crate) fn create_table(tracks: &[Audio]) -> Table<'_> {
         .highlight_symbol(">")
 }
 
-pub(crate) fn create_list(rows: Vec<Span>, highlight: Style) -> List {
+pub(crate) fn create_list(rows: Vec<Line>, highlight: Style) -> List {
     List::new(rows)
         .highlight_style(highlight)
-        .highlight_symbol("  ")
+        .highlight_symbol("   ")
         .repeat_highlight_symbol(true)
 }
 
