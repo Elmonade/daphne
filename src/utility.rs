@@ -14,7 +14,7 @@ pub(crate) fn load_audio(path: PathBuf) -> (usize, Vec<Audio>) {
         match entry {
             Ok(entry) => {
                 if let Some(extension) = entry.path().extension() {
-                    if extension == "mp3" || extension == "flac" || extension == "wav" {
+                    if extension == "mp3" || extension == "flac" {
                         let path = entry.path();
                         let tagged_file = match read_from_path(path) {
                             Ok(it) => it,
@@ -60,14 +60,17 @@ pub(crate) fn load_audio(path: PathBuf) -> (usize, Vec<Audio>) {
 }
 
 pub(crate) fn order_by(new: &Order, old: &Order, tracks: &mut [Audio]) {
-    if new == old {
-        return;
-    }
-    match new {
-        Order::Shuffle => order_shuffle(tracks),
-        Order::Album => order_album(tracks),
-        Order::Artist => order_artist(tracks),
-        Order::Track => order_tracks(tracks),
+    if new != old {
+        match new {
+            Order::Shuffle => order_shuffle(tracks),
+            Order::Album => order_album(tracks),
+            Order::Artist => order_artist(tracks),
+            Order::Track => order_tracks(tracks),
+        }
+
+        let current_track = tracks.iter().map(|track|{
+
+        });
     }
 }
 

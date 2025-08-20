@@ -208,6 +208,7 @@ pub(crate) fn handle_choosing(key: KeyEvent, state: &mut PlayerState) -> Action 
                 state.is_configuring = true;
             }
             ':' => {
+                state.is_choosing = false;
                 if let Some(index) = state.table_state.selected() {
                     match state.current_track_index {
                         Some(current_index) => {
@@ -249,33 +250,20 @@ pub(crate) fn handle_choosing(key: KeyEvent, state: &mut PlayerState) -> Action 
                 state.iteration_count = 0;
                 state.table_state.select_previous();
             }
-            'p' => {
+            '<' => {
+                state.iteration_count = 0;
                 if let Some(mut index) = state.current_track_index {
                     state.tracks[index].is_playing = false;
                     index = (index + state.number_of_tracks - 1) % state.number_of_tracks;
                     play_new_track(index, state);
                 }
             }
-            'n' => {
+            '>' => {
+                state.iteration_count = 0;
                 if let Some(mut index) = state.current_track_index {
                     state.tracks[index].is_playing = false;
                     index = (index + 1) % state.number_of_tracks;
                     play_new_track(index, state);
-                }
-            }
-            '<' => {
-                state
-                    .tx
-                    .send(Command::Backward(state.seek_distance))
-                    .unwrap_or(());
-            }
-            '>' => {
-                if let Some(index) = state.current_track_index {
-                    let length = state.tracks[index].length;
-                    state
-                        .tx
-                        .send(Command::Forward(state.seek_distance, length as usize))
-                        .unwrap_or(());
                 }
             }
             'K' => {

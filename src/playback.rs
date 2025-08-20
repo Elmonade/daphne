@@ -25,37 +25,42 @@ pub fn setup() -> (mpsc::Sender<Command>, mpsc::Receiver<SinkState>) {
 
     let _ = thread::Builder::new()
         .name("playback".to_string())
-        .spawn(move || {
-            let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-            let sink = Sink::try_new(&stream_handle).unwrap();
-            let mut was_playing = false;
-            let mut sink_state;
-            let mut current_track_finished = false;
+        .spawn(move || match OutputStream::try_default() {
+            Ok((_stream, stream_handle)) => {
+                let sink = Sink::try_new(&stream_handle).unwrap();
+                let mut was_playing = false;
+                let mut sink_state;
+                let mut current_track_finished = false;
 
-            loop {
-                if let Ok(command) = command_rx.try_recv() {
-                    audio_command(command, &sink);
+                loop {
+                    if let Ok(command) = command_rx.try_recv() {
+                        audio_command(command, &sink);
+                    }
+
+                    let is_playing = !sink.empty() && !sink.is_paused();
+                    if was_playing && sink.empty() {
+                        current_track_finished = true;
+                    }
+
+                    sink_state = SinkState {
+                        _is_paused: sink.is_paused(),
+                        is_empty: sink.empty(),
+                        is_playing,
+                        current_track_finished,
+                        position: sink.get_pos(),
+                        volume: sink.volume(),
+                    };
+
+                    current_track_finished = false;
+                    state_tx.send(sink_state).unwrap_or(());
+
+                    was_playing = is_playing;
+                    thread::sleep(time::Duration::from_millis(33));
                 }
-
-                let is_playing = !sink.empty() && !sink.is_paused();
-                if was_playing && sink.empty() {
-                    current_track_finished = true;
-                }
-
-                sink_state = SinkState {
-                    _is_paused: sink.is_paused(),
-                    is_empty: sink.empty(),
-                    is_playing,
-                    current_track_finished,
-                    position: sink.get_pos(),
-                    volume: sink.volume(),
-                };
-
-                current_track_finished = false;
-                state_tx.send(sink_state).unwrap_or(());
-
-                was_playing = is_playing;
-                thread::sleep(time::Duration::from_millis(33));
+            }
+            Err(_) => {
+                eprintln!("\nCan not find output.");
+                thread::sleep(Duration::from_secs(5));
             }
         });
     (command_tx, state_rx)

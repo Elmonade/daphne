@@ -44,6 +44,82 @@ pub(crate) fn render(frame: &mut Frame, state: &PlayerState, sink: &SinkState) {
         let table = view_utility::create_table(&state.tracks);
         let mut table_state = state.table_state.clone();
         frame.render_stateful_widget(table, frame.area(), &mut table_state);
+    } else if state.is_configuring {
+        // Config Section
+        frame.render_widget(Clear, frame.area());
+        let highlight = if state.is_configuring {
+            Style::new().reversed()
+        } else {
+            Style::new()
+        };
+
+        let options = [
+            Order::Shuffle.to_string(),
+            Order::Album.to_string(),
+            Order::Artist.to_string(),
+            Order::Track.to_string(),
+        ];
+
+        // TODO: This should be inside view_utility.
+        let rows: Vec<Line> = options
+            .iter()
+            .map(|item| {
+                let style = match *item == state.playback_order.to_string() {
+                    true => Style::default().fg(Color::Green),
+                    _ => Style::default(),
+                };
+
+                Span::from(item).style(style).into_left_aligned_line()
+            })
+            .collect();
+
+        let list = view_utility::create_list(rows, highlight);
+        let mut list_state = state.list_state.clone();
+        frame.render_stateful_widget(list.block(settings), frame.area(), &mut list_state);
+    } else if state.is_adjusting {
+        // Volume Section
+        let volume = (sink.volume * 10.0) as u32;
+        let mut string_volume = volume.to_string();
+        if volume < 10 {
+            string_volume = format!("0{volume}")
+        }
+
+        let enlarged_volume = NumberDrawer::draw(&string_volume);
+
+        let centered_area = view_utility::center(
+            frame.area(),
+            Constraint::Percentage(100),
+            Constraint::Percentage(100),
+        );
+
+        let mut spacer = 0;
+        if centered_area.width > 10 && centered_area.height > 10 {
+            spacer = 5;
+        }
+
+        let volume_paragraph = Paragraph::new(enlarged_volume)
+            .style(Style::default().fg(Color::Yellow))
+            .block(Block::new().borders(Borders::NONE).padding(Padding::new(
+                centered_area.width / 2 - spacer,
+                0,
+                centered_area.height / 2 - spacer + 1,
+                0,
+            )));
+
+        frame.render_widget(Clear, frame.area());
+        frame.render_widget(volume_paragraph, centered_area);
+    } else if state.is_searching {
+        // Search Section
+        frame.render_widget(Clear, frame.area());
+        Paragraph::new(state.keyword.as_str())
+            .block(
+                Block::bordered()
+                    .fg(Color::Green)
+                    .border_type(BorderType::Rounded)
+                    .padding(Padding::uniform(1))
+                    .title("SEARCH"),
+            )
+            .render(frame.area(), frame.buffer_mut());
     } else {
         // Player Section
         let [top, bottom] = Layout::vertical([Constraint::Length(6), Constraint::Fill(1)])
@@ -93,87 +169,5 @@ pub(crate) fn render(frame: &mut Frame, state: &PlayerState, sink: &SinkState) {
                 );
             frame.render_widget(info_para, bottom);
         }
-    }
-
-    // Config Section
-    if state.is_configuring {
-        frame.render_widget(Clear, frame.area());
-        let highlight = if state.is_configuring {
-            Style::new().reversed()
-        } else {
-            Style::new()
-        };
-
-        let options = [
-            Order::Shuffle.to_string(),
-            Order::Album.to_string(),
-            Order::Artist.to_string(),
-            Order::Track.to_string(),
-        ];
-
-        // TODO: This should be inside view_utility.
-        let rows: Vec<Line> = options
-            .iter()
-            .map(|item| {
-                let style = match *item == state.playback_order.to_string() {
-                    true => Style::default().fg(Color::Green),
-                    _ => Style::default(),
-                };
-
-                Span::from(item).style(style).into_left_aligned_line()
-            })
-            .collect();
-
-        let list = view_utility::create_list(rows, highlight);
-        let mut list_state = state.list_state.clone();
-        frame.render_stateful_widget(list.block(settings), frame.area(), &mut list_state);
-    }
-
-    // Search Section
-    if state.is_searching {
-        frame.render_widget(Clear, frame.area());
-        Paragraph::new(state.keyword.as_str())
-            .block(
-                Block::bordered()
-                    .fg(Color::Green)
-                    .border_type(BorderType::Rounded)
-                    .padding(Padding::uniform(1))
-                    .title("SEARCH"),
-            )
-            .render(frame.area(), frame.buffer_mut());
-    }
-
-    // Volume Section
-    if state.is_adjusting {
-        let volume = (sink.volume * 10.0) as u32;
-        let mut string_volume = volume.to_string();
-        if volume < 10 {
-            string_volume = format!("0{volume}")
-        }
-
-        let enlarged_volume = NumberDrawer::draw(&string_volume);
-
-        let centered_area = view_utility::center(
-            frame.area(),
-            Constraint::Percentage(100),
-            Constraint::Percentage(100),
-        );
-
-        let mut spacer = 0;
-        if centered_area.width > 10 && centered_area.height > 10 {
-            spacer = 5;
-        }
-
-        let volume_paragraph = Paragraph::new(enlarged_volume)
-            .style(Style::default().fg(Color::Yellow))
-            .block(Block::new().borders(Borders::NONE).padding(Padding::new(
-                centered_area.width / 2 - spacer,
-                0,
-                centered_area.height / 2 - spacer + 1,
-                0,
-            )));
-
-        frame.render_widget(Clear, frame.area());
-        frame.render_widget(volume_paragraph, centered_area);
     }
 }
