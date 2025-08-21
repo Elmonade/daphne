@@ -31,7 +31,7 @@ struct Config {
     seek_distance: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 struct Audio {
     is_playing: bool,
     name: String,
