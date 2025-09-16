@@ -19,6 +19,8 @@ different actions depending on the state the player is in.
   <img height="400" alt="IMG_1388" src="https://github.com/user-attachments/assets/f1cd3276-474a-4972-95c2-5b35434767d2" />
 </p>
 
+A small [showcase](https://www.youtube.com/watch?v=DNfETR2SWeY) of how it all works in action.
+
 ## Hardware
 The device is encased in 3D printed PLA. However, the design is not complete, yet.
 <p align="center">
