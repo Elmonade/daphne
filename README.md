@@ -19,6 +19,12 @@ different actions depending on the state the player is in.
   <img height="400" alt="IMG_1388" src="https://github.com/user-attachments/assets/f1cd3276-474a-4972-95c2-5b35434767d2" />
 </p>
 
+## Hardware
+The device is encased in 3D printed PLA. However, the design is not complete, yet.
+<p align="center">
+<img height="400" alt="image" src="https://github.com/user-attachments/assets/777cf037-fe27-4c31-8829-c25ee06c5667" />
+</p>
+
 ## Example
 
 *- Written by mere mortals*
