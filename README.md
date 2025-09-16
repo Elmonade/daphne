@@ -16,9 +16,8 @@ enough buttons to map to every feature of the daphne. Thus, some of the buttons 
 different actions depending on the state the player is in.
 
 <p align="center">
-<img width="800" alt="IMG_1439" src="https://github.com/user-attachments/assets/885c258e-5072-4c79-a087-d5bcfc926d83" />
+<img width="600" alt="IMG_1440" src="https://github.com/user-attachments/assets/1647c038-6ff1-42fa-8495-d2cf00b37027" />
 </p>
-
 
 A small [showcase](https://www.youtube.com/watch?v=DNfETR2SWeY) of how it all works in action.
 
