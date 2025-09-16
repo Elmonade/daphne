@@ -186,7 +186,6 @@ pub(crate) fn handle_playback(key: KeyEvent, state: &mut PlayerState) -> Action 
             ' ' => {
                 state.is_configuring = true;
             }
-            // TODO: If the sink is empty, send new_track command.
             ':' => {
                 state
                     .tx

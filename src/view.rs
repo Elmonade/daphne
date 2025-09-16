@@ -36,15 +36,8 @@ pub(crate) fn render(frame: &mut Frame, state: &PlayerState, sink: &SinkState) {
         .title("Order")
         .borders(Borders::TOP | Borders::BOTTOM);
 
-    if state.is_choosing {
-        // List seciton
-        let left_top_block = Block::default().borders(Borders::NONE).fg(Color::Yellow);
-        frame.render_widget(left_top_block, frame.area());
-
-        let table = view_utility::create_table(&state.tracks);
-        let mut table_state = state.table_state.clone();
-        frame.render_stateful_widget(table, frame.area(), &mut table_state);
-    } else if state.is_configuring {
+    // Temporary screens
+    if state.is_configuring {
         // Config Section
         frame.render_widget(Clear, frame.area());
         let highlight = if state.is_configuring {
@@ -121,53 +114,64 @@ pub(crate) fn render(frame: &mut Frame, state: &PlayerState, sink: &SinkState) {
             )
             .render(frame.area(), frame.buffer_mut());
     } else {
-        // Player Section
-        let [top, bottom] = Layout::vertical([Constraint::Length(6), Constraint::Fill(1)])
-            .vertical_margin(1)
-            .flex(ratatui::layout::Flex::Center)
-            .areas(frame.area());
-        let player_color = match sink.is_playing {
-            true => Color::Yellow,
-            false => Color::Magenta,
-        };
+        // Main Screens
+        if state.is_choosing {
+            // List seciton
+            let left_top_block = Block::default().borders(Borders::NONE).fg(Color::Yellow);
+            frame.render_widget(left_top_block, frame.area());
 
-        let mut index = 1; // Point at something on startup.
-        if let Some(current_index) = state.current_track_index {
-            index = current_index;
-        }
-        if let Some(music) = state.tracks.get(index) {
-            let progress_label = format!(" {}/{}", sink.position.as_secs(), music.length);
-            let progress_block = view_utility::title_block(&player_color, &progress_label);
-            view_utility::render_progress(
-                &sink.position,
-                top,
-                frame.buffer_mut(),
-                progress_block,
-                music.length as f64,
-            );
+            let table = view_utility::create_table(&state.tracks);
+            let mut table_state = state.table_state.clone();
+            frame.render_stateful_widget(table, frame.area(), &mut table_state);
+        } else {
+            // Player Section
+            let [top, bottom] = Layout::vertical([Constraint::Length(6), Constraint::Fill(1)])
+                .vertical_margin(1)
+                .flex(ratatui::layout::Flex::Center)
+                .areas(frame.area());
+            let player_color = match sink.is_playing {
+                true => Color::Yellow,
+                false => Color::Magenta,
+            };
 
-            let name = Line::from(vec![Span::styled(
-                &music.name,
-                Style::default().fg(player_color),
-            )])
-            .right_aligned();
-            let author = Line::from(vec![Span::styled(
-                &music.author,
-                Style::default().fg(Color::Green),
-            )])
-            .right_aligned();
-
-            let info_para = Paragraph::new(name)
-                .wrap(ratatui::widgets::Wrap { trim: true })
-                .alignment(ratatui::layout::Alignment::Left)
-                .block(
-                    Block::default()
-                        .borders(Borders::all())
-                        .padding(Padding::top(2))
-                        .style(Style::default().fg(player_color))
-                        .title_bottom(author),
+            let mut index = 1; // Point at something on startup.
+            if let Some(current_index) = state.current_track_index {
+                index = current_index;
+            }
+            if let Some(music) = state.tracks.get(index) {
+                let progress_label = format!(" {}/{}", sink.position.as_secs(), music.length);
+                let progress_block = view_utility::title_block(&player_color, &progress_label);
+                view_utility::render_progress(
+                    &sink.position,
+                    top,
+                    frame.buffer_mut(),
+                    progress_block,
+                    music.length as f64,
                 );
-            frame.render_widget(info_para, bottom);
+
+                let name = Line::from(vec![Span::styled(
+                    &music.name,
+                    Style::default().fg(player_color),
+                )])
+                .right_aligned();
+                let author = Line::from(vec![Span::styled(
+                    &music.author,
+                    Style::default().fg(Color::Green),
+                )])
+                .right_aligned();
+
+                let info_para = Paragraph::new(name)
+                    .wrap(ratatui::widgets::Wrap { trim: true })
+                    .alignment(ratatui::layout::Alignment::Left)
+                    .block(
+                        Block::default()
+                            .borders(Borders::all())
+                            .padding(Padding::top(2))
+                            .style(Style::default().fg(player_color))
+                            .title_bottom(author),
+                    );
+                frame.render_widget(info_para, bottom);
+            }
         }
     }
 }
