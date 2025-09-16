@@ -12,8 +12,12 @@ efficient - at the cost of maintainability.
 
 ## Controls
 The display we using have a dedicated 3 buttons and a one d-pad. Which is not
-enough buttons to map to every feature of the daphne. Thus, the buttons perform
+enough buttons to map to every feature of the daphne. Thus, some of the buttons perform
 different actions depending on the state the player is in.
+
+<p align="center">
+  <img height="400" alt="IMG_1388" src="https://github.com/user-attachments/assets/f1cd3276-474a-4972-95c2-5b35434767d2" />
+</p>
 
 ## Example
 
